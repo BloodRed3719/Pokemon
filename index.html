@@ -132,12 +132,20 @@
 
     function updateCounter() {
       counter.innerHTML = "";
+      let totalScore = 0;
+
       for (const pokemon in caughtPokemons) {
         const count = caughtPokemons[pokemon];
         const pokemonCount = document.createElement("p");
         pokemonCount.textContent = pokemon + ": " + count;
         counter.appendChild(pokemonCount);
+
+        totalScore += count;
       }
+
+      const totalScoreElement = document.createElement("p");
+      totalScoreElement.textContent = "Total Score: " + totalScore;
+      counter.appendChild(totalScoreElement);
     }
 
     function getRandomPosition() {
