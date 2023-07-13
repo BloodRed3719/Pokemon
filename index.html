@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pokémon Game</title>
+  <style>
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      width: 300px;
+    }
+
+    .cell {
+      border: 1px solid black;
+      height: 50px;
+      text-align: center;
+    }
+
+    .player {
+      background-color: blue;
+    }
+
+    .pokemon-squirtle {
+      background-color: blue;
+    }
+
+    .pokemon-charmander {
+      background-color: red;
+    }
+
+    .pokemon-bulbasaur {
+      background-color: green;
+    }
+
+    .pokemon-pikachu {
+      background-color: yellow;
+    }
+
+    .counter {
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+<div class="grid" id="grid"></div>
+<div class="counter" id="counter"></div>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const GRID_SIZE = 5;
+    let playerX = getRandomPosition();
+    let playerY = getRandomPosition();
+    let pokemonX = getRandomPosition();
+    let pokemonY = getRandomPosition();
+    let caughtPokemons = {
+      Squirtle: 0,
+      Charmander: 0,
+      Bulbasaur: 0,
+      Pikachu: 0,
+    };
+
+    const grid = document.getElementById("grid");
+    const counter = document.getElementById("counter");
+    let currentPokemon = getRandomPokemon();
+
+    // Generate grid
+    for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      grid.appendChild(cell);
+    }
+
+    updateGrid();
+
+    document.addEventListener("keydown", function (event) {
+      const key = event.key;
+      movePlayer(key);
+    });
+
+    function movePlayer(key) {
+      switch (key) {
+        case "w":
+          if (playerY > 0) playerY--;
+          break;
+        case "a":
+          if (playerX > 0) playerX--;
+          break;
+        case "s":
+          if (playerY < GRID_SIZE - 1) playerY++;
+          break;
+        case "d":
+          if (playerX < GRID_SIZE - 1) playerX++;
+          break;
+      }
+
+      if (playerX === pokemonX && playerY === pokemonY) {
+        catchPokemon();
+      }
+
+      updateGrid();
+    }
+
+    function catchPokemon() {
+      caughtPokemons[currentPokemon]++;
+      alert("You caught a " + currentPokemon + "!");
+
+      pokemonX = getRandomPosition();
+      pokemonY = getRandomPosition();
+      currentPokemon = getRandomPokemon();
+
+      updateCounter();
+    }
+
+    function updateGrid() {
+      const cells = grid.getElementsByClassName("cell");
+
+      // Clear grid
+      Array.from(cells).forEach(function (cell) {
+        cell.innerHTML = "";
+        cell.className = "cell";
+      });
+
+      // Update player position
+      const playerCell = cells[playerY * GRID_SIZE + playerX];
+      playerCell.classList.add("player");
+
+      // Update Pokémon position
+      const pokemonCell = cells[pokemonY * GRID_SIZE + pokemonX];
+      pokemonCell.classList.add("pokemon-" + currentPokemon.toLowerCase());
+    }
+
+    function updateCounter() {
+      counter.innerHTML = "";
+      for (const pokemon in caughtPokemons) {
+        const count = caughtPokemons[pokemon];
+        const pokemonCount = document.createElement("p");
+        pokemonCount.textContent = pokemon + ": " + count;
+        counter.appendChild(pokemonCount);
+      }
+    }
+
+    function getRandomPosition() {
+      return Math.floor(Math.random() * GRID_SIZE);
+    }
+
+    function getRandomPokemon() {
+      const pokemons = ["Squirtle", "Charmander", "Bulbasaur", "Pikachu"];
+      return pokemons[Math.floor(Math.random() * pokemons.length)];
+    }
+  });
+</script>
+</body>
+</html>
