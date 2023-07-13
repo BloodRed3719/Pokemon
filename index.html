@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Pokemon Game</title>
+  <title>Pokémon Game</title>
   <style>
     .grid {
       display: grid;
@@ -86,7 +86,6 @@
     <h2>Spell the Letters!</h2>
     <p id="minigame-timer">Time: 15</p>
     <p id="minigame-letters"></p>
-    <input type="text" id="minigame-input" />
     <p id="minigame-result"></p>
   </div>
 </div>
@@ -107,7 +106,6 @@
     const minigameContainer = document.getElementById("minigame-container");
     const minigameTimer = document.getElementById("minigame-timer");
     const minigameLetters = document.getElementById("minigame-letters");
-    const minigameInput = document.getElementById("minigame-input");
     const minigameResult = document.getElementById("minigame-result");
     let currentPokemon;
     let minigameActive = false;
@@ -128,7 +126,11 @@
 
     document.addEventListener("keydown", function (event) {
       const key = event.key.toLowerCase(); // Convert the pressed key to lowercase
-      movePlayer(key);
+      if (minigameActive && /^[a-z]$/.test(key)) {
+        checkLetter(key);
+      } else {
+        movePlayer(key);
+      }
     });
 
     function movePlayer(key) {
@@ -161,7 +163,6 @@
     function activateMinigame() {
       minigameActive = true;
       minigameLetters.textContent = "";
-      minigameInput.value = "";
       minigameResult.textContent = "";
       remainingTime = 15;
       minigameTimer.textContent = "Time: " + remainingTime;
@@ -185,36 +186,39 @@
       minigameActive = false;
     }
 
-    minigameInput.addEventListener("input", function () {
-      checkLetter();
-    });
-
-    function checkLetter() {
-      const inputLetter = minigameInput.value.trim().toLowerCase();
+    function checkLetter(letter) {
       const targetLetter = currentLetters[letterIndex].toLowerCase();
 
-      if (inputLetter === targetLetter) {
+      if (letter === targetLetter) {
         minigameResult.textContent = "Correct!";
         letterIndex++;
 
         if (letterIndex === currentLetters.length) {
-          caughtPokemons[currentPokemon]++;
-          updateCounter();
-
-          if (caughtPokemons[currentPokemon] >= 10) {
-            alert("You caught 10 " + currentPokemon + "s!");
-            caughtPokemons[currentPokemon] = 0;
-          }
-
-          endMinigame();
+          catchPokemon();
         } else {
           displayCurrentLetter();
         }
-
-        minigameInput.value = ""; // Clear the input field
       } else {
         minigameResult.textContent = "Wrong!";
       }
+    }
+
+    function catchPokemon() {
+      caughtPokemons[currentPokemon]++;
+      updateCounter();
+
+      if (caughtPokemons[currentPokemon] >= 10) {
+        alert("You caught 10 " + currentPokemon + "s!");
+        caughtPokemons[currentPokemon] = 0;
+      }
+
+      pokemonX = getRandomPosition();
+      pokemonY = getRandomPosition();
+      currentPokemon = getRandomPokemon();
+      letterIndex = 0; // Reset letterIndex
+
+      updateGrid();
+      endMinigame();
     }
 
     function displayCurrentLetter() {
