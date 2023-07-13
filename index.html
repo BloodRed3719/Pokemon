@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Pokémon Game</title>
+  <title>Pokemon Game</title>
   <style>
     .grid {
       display: grid;
@@ -40,19 +40,61 @@
       text-align: center;
       margin-top: 20px;
     }
+
+    #minigame-container {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.5);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 999;
+    }
+
+    #minigame {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      background-color: white;
+      border-radius: 5px;
+    }
+
+    #minigame-letters {
+      display: flex;
+      align-items: center;
+    }
+
+    #minigame-letters span {
+      margin: 0 5px;
+    }
+
+    #minigame-letters .next-letter {
+      color: gray;
+    }
   </style>
 </head>
 <body>
 <div class="grid" id="grid"></div>
 <div class="counter" id="counter"></div>
 
+<div id="minigame-container">
+  <div id="minigame">
+    <h2>Spell the Letters!</h2>
+    <p id="minigame-timer">Time: 15</p>
+    <p id="minigame-letters"></p>
+    <input type="text" id="minigame-input" />
+    <p id="minigame-result"></p>
+  </div>
+</div>
+
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const GRID_SIZE = 5;
-    let playerX = getRandomPosition();
-    let playerY = getRandomPosition();
-    let pokemonX = getRandomPosition();
-    let pokemonY = getRandomPosition();
+    let playerX, playerY, pokemonX, pokemonY;
     let caughtPokemons = {
       Squirtle: 0,
       Charmander: 0,
@@ -62,7 +104,17 @@
 
     const grid = document.getElementById("grid");
     const counter = document.getElementById("counter");
-    let currentPokemon = getRandomPokemon();
+    const minigameContainer = document.getElementById("minigame-container");
+    const minigameTimer = document.getElementById("minigame-timer");
+    const minigameLetters = document.getElementById("minigame-letters");
+    const minigameInput = document.getElementById("minigame-input");
+    const minigameResult = document.getElementById("minigame-result");
+    let currentPokemon;
+    let minigameActive = false;
+    let timer;
+    let remainingTime;
+    let letterIndex = 0;
+    let currentLetters = [];
 
     // Generate grid
     for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
@@ -71,14 +123,19 @@
       grid.appendChild(cell);
     }
 
+    assignInitialPositions();
     updateGrid();
 
     document.addEventListener("keydown", function (event) {
-      const key = event.key;
+      const key = event.key.toLowerCase(); // Convert the pressed key to lowercase
       movePlayer(key);
     });
 
     function movePlayer(key) {
+      if (minigameActive) {
+        return; // Don't move the player if the minigame is active
+      }
+
       switch (key) {
         case "w":
           if (playerY > 0) playerY--;
@@ -95,21 +152,79 @@
       }
 
       if (playerX === pokemonX && playerY === pokemonY) {
-        catchPokemon();
+        activateMinigame();
       }
 
       updateGrid();
     }
 
-    function catchPokemon() {
-      caughtPokemons[currentPokemon]++;
-      alert("You caught a " + currentPokemon + "!");
+    function activateMinigame() {
+      minigameActive = true;
+      minigameLetters.textContent = "";
+      minigameInput.value = "";
+      minigameResult.textContent = "";
+      remainingTime = 15;
+      minigameTimer.textContent = "Time: " + remainingTime;
+      minigameContainer.style.display = "flex";
+      generateRandomLetters();
+      displayCurrentLetter();
 
-      pokemonX = getRandomPosition();
-      pokemonY = getRandomPosition();
-      currentPokemon = getRandomPokemon();
+      timer = setInterval(function () {
+        remainingTime--;
+        minigameTimer.textContent = "Time: " + remainingTime;
 
-      updateCounter();
+        if (remainingTime <= 0) {
+          endMinigame();
+        }
+      }, 1000);
+    }
+
+    function endMinigame() {
+      clearInterval(timer);
+      minigameContainer.style.display = "none";
+      minigameActive = false;
+    }
+
+    minigameInput.addEventListener("input", function () {
+      checkLetter();
+    });
+
+    function checkLetter() {
+      const inputLetter = minigameInput.value.trim().toLowerCase();
+      const targetLetter = currentLetters[letterIndex].toLowerCase();
+
+      if (inputLetter === targetLetter) {
+        minigameResult.textContent = "Correct!";
+        letterIndex++;
+
+        if (letterIndex === currentLetters.length) {
+          caughtPokemons[currentPokemon]++;
+          updateCounter();
+
+          if (caughtPokemons[currentPokemon] >= 10) {
+            alert("You caught 10 " + currentPokemon + "s!");
+            caughtPokemons[currentPokemon] = 0;
+          }
+
+          endMinigame();
+        } else {
+          displayCurrentLetter();
+        }
+
+        minigameInput.value = ""; // Clear the input field
+      } else {
+        minigameResult.textContent = "Wrong!";
+      }
+    }
+
+    function displayCurrentLetter() {
+      const currentLetter = currentLetters[letterIndex];
+      const nextLetter = currentLetters[letterIndex + 1] || "";
+
+      minigameLetters.innerHTML = `
+        <span>${currentLetter}</span>
+        <span class="next-letter">${nextLetter}</span>
+      `;
     }
 
     function updateGrid() {
@@ -132,20 +247,39 @@
 
     function updateCounter() {
       counter.innerHTML = "";
-      let totalScore = 0;
-
       for (const pokemon in caughtPokemons) {
         const count = caughtPokemons[pokemon];
         const pokemonCount = document.createElement("p");
         pokemonCount.textContent = pokemon + ": " + count;
         counter.appendChild(pokemonCount);
+      }
+    }
 
-        totalScore += count;
+    function generateRandomLetters() {
+      const alphabet = "abcdefghijklmnopqrstuvwxyz";
+      const randomIndexes = [];
+
+      while (randomIndexes.length < 10) {
+        const randomIndex = Math.floor(Math.random() * alphabet.length);
+
+        if (!randomIndexes.includes(randomIndex)) {
+          randomIndexes.push(randomIndex);
+        }
       }
 
-      const totalScoreElement = document.createElement("p");
-      totalScoreElement.textContent = "Total Score: " + totalScore;
-      counter.appendChild(totalScoreElement);
+      currentLetters = randomIndexes.map((index) => alphabet[index]);
+    }
+
+    function assignInitialPositions() {
+      playerX = getRandomPosition();
+      playerY = getRandomPosition();
+
+      do {
+        pokemonX = getRandomPosition();
+        pokemonY = getRandomPosition();
+      } while (pokemonX === playerX && pokemonY === playerY);
+
+      currentPokemon = getRandomPokemon();
     }
 
     function getRandomPosition() {
